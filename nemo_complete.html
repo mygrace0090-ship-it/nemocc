@@ -283,6 +283,22 @@ h1,.subtitle,.main-tabs,.quot-controls,.print-btn,.no-print,#main-price,#main-si
         <option value="30">30% 추가 할인</option>
       </select>
     </div>
+      <div class="field" id="quotP1DistrictField" style="display:none;">
+  <label>자치구 (프리미엄 가산용)</label>
+  <select id="quotP1District" onchange="renderQuotation()">
+    <option value="">선택 안 함</option>
+  </select>
+</div>
+<div class="field" id="quotPremAddField" style="display:none;">
+  <label>프리미엄 가산율 (프로모션)</label>
+  <select id="quotPremAdd" onchange="renderQuotation()">
+    <option value="0">없음 (0%)</option>
+    <option value="5">5% 가산</option>
+    <option value="10">10% 가산</option>
+    <option value="15">15% 가산</option>
+    <option value="20">20% 가산</option>
+  </select>
+</div>
     <div class="field"><label>발행일</label><input type="date" id="quotDate"></div>
 
     <div class="field"><label>수신 회사명</label><input type="text" id="quotToCompany" placeholder="회사명 입력"></div>
@@ -367,23 +383,39 @@ var _sqPeriodIdx=0;  // 탭4 선택 기간 (기본: 1개월)
 function calcF(dn,p){var d=districts.find(x=>x.name===dn);if(!d)return null;var pt=d.price*p.months,pdisc=pt*(1-p.pd),ft=pdisc+p.bd;return{pt,pdisc,bd:p.bd,ft,mo:ft/p.months,nt:pt+5500000*p.months}}
 function renderTable(p){var tb=document.getElementById(p.tbody),s=[...districts].sort((a,b)=>a.price-b.price),h='';s.forEach(d=>{var r=calcF(d.name,p);h+='<tr data-district="'+d.name+'"><td class="name">'+d.name+'</td><td>'+fmt(r.pt)+'</td><td>'+fmt(r.pdisc)+'</td><td>'+fmt(r.bd)+'</td><td><strong>'+fmt(r.ft)+'</strong></td><td class="highlight">'+fmt(r.mo)+'</td></tr>'});tb.innerHTML=h}
 function renderSummary(){var p=periods[3],rs=districts.map(d=>{var r=calcF(d.name,p);return{name:d.name,mo:r.mo}});rs.sort((a,b)=>a.mo-b.mo);var mn=rs[0],mx=rs[rs.length-1];document.getElementById('summary-cards').innerHTML='<div class="summary-card"><div class="label">최저가</div><div class="value">'+mn.name+'</div><div class="sub">월 '+fmt(mn.mo)+'원</div></div><div class="summary-card"><div class="label">최고가</div><div class="value">'+mx.name+'</div><div class="sub">월 '+fmt(mx.mo)+'원</div></div><div class="summary-card"><div class="label">프리미엄 할인율</div><div class="value">85%</div><div class="sub">12개월 최대</div></div><div class="summary-card"><div class="label">기본 슬롯 할인가</div><div class="value">29,700,000원</div><div class="sub">12개월 55%</div></div>'}
-function initDistrictDD(){var j=document.getElementById('districtJump'),q=document.getElementById('quotDistrict'),s=[...districts].sort((a,b)=>a.name.localeCompare(b.name,'ko'));s.forEach(d=>{j.innerHTML+='<option value="'+d.name+'">'+d.name+'</option>';q.innerHTML+='<option value="'+d.name+'">'+d.name+'</option>'});q.value='강남구'}
+function initDistrictDD(){
+  var j=document.getElementById('districtJump'),q=document.getElementById('quotDistrict');
+  var p1d=document.getElementById('quotP1District'); // 신규
+  var s=[...districts].sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  s.forEach(d=>{
+    j.innerHTML+='<option value="'+d.name+'">'+d.name+'</option>';
+    q.innerHTML+='<option value="'+d.name+'">'+d.name+'</option>';
+    if(p1d)p1d.innerHTML+='<option value="'+d.name+'">'+d.name+' (프리미엄 정가 '+fmt(d.price)+'원/월)</option>';
+  });
+  q.value='강남구';
+}
+
 function jumpToDistrict(){var n=document.getElementById('districtJump').value;if(!n){alert('자치구를 선택해주세요.');return}document.querySelectorAll('tr.highlighted').forEach(t=>t.classList.remove('highlighted'));var ac=document.querySelector('#main-price .tab-content.active');if(ac){var row=ac.querySelector('tr[data-district="'+n+'"]');if(row){row.classList.add('highlighted');row.scrollIntoView({behavior:'smooth',block:'center'})}}}
 
 // 탭2
-// 탭2 - 상품 유형에 따라 UI 토글
+  // 탭2 - 상품 유형에 따라 UI 토글
 function onQuotTypeChange(){
   var type=document.querySelector('input[name="quotProductType"]:checked').value;
-  // 라디오 라벨 색상 갱신
   document.querySelectorAll('input[name="quotProductType"]').forEach(r=>{
     var lb=r.parentElement;
     if(r.checked){lb.style.background='#2c5aa0';lb.style.color='#fff'}
     else{lb.style.background='#fff';lb.style.color='#2c5aa0'}
   });
-  // 상품1일 때만 추가 할인 UI 표시
-  document.getElementById('quotExtraDiscField').style.display=type==='p1'?'':'none';
+  // 상품1일 때만: 추가 할인, P1 자치구, 프리미엄 가산 UI 표시
+  var showP1=type==='p1';
+  document.getElementById('quotExtraDiscField').style.display=showP1?'':'none';
+  document.getElementById('quotP1DistrictField').style.display=showP1?'':'none';
+  document.getElementById('quotPremAddField').style.display=showP1?'':'none';
+  // 상품2일 때 기존 자치구 선택 필드는 그대로
+  document.getElementById('quotDistrictField').style.display=showP1?'none':'';
   renderQuotation();
 }
+
 
 // 상품1 정보 (원본 표 데이터와 동일)
 var PRODUCT1_INFO=[
@@ -417,71 +449,96 @@ function renderQuotation(){
 function renderQuotP1(date,tc,tp,tph,fp,fph){
   var extra=parseInt(document.getElementById('quotExtraDisc').value)||0;
   var extraRate=extra/100;
+  var p1District=document.getElementById('quotP1District').value;
+  var premAdd=parseInt(document.getElementById('quotPremAdd').value)||0;
+  var premRate=premAdd/100;
   
-  // 각 기간별 계산: 프로모션 할인가(ft) → 추가 할인 → 최종
+  // 프리미엄 가산 적용 여부: 자치구 선택 O + 가산율 > 0
+  var applyPrem=p1District&&premAdd>0;
+  var distObj=applyPrem?districts.find(x=>x.name===p1District):null;
+  var distPrice=distObj?distObj.price:0;
+  
+  // 각 기간별 계산
   var rows=PRODUCT1_INFO.map(p=>{
-    var promoDisc=p.nt-p.ft;               // 프로모션 할인 금액
-    var extraDisc=Math.round(p.ft*extraRate); // 추가 할인 금액
-    var finalPrice=p.ft-extraDisc;          // 최종 결제액
-    var totalDiscRate=((p.nt-finalPrice)/p.nt*100);
+    var promoDisc=p.nt-p.ft;
+    var extraDisc=Math.round(p.ft*extraRate);
+    var subTotal=p.ft-extraDisc;                        // 상품1 소계
+    var premAddAmt=applyPrem?Math.round(distPrice*p.months*premRate):0;
+    var finalPrice=subTotal+premAddAmt;                 // 최종 판매가
+    var mo=finalPrice/p.months;
     return{
       label:p.label,months:p.months,nt:p.nt,
       promoDisc:promoDisc,promoRate:p.dr,
-      subTotal:p.ft,
       extraDisc:extraDisc,extraRate:extra,
-      finalPrice:finalPrice,
-      mo:finalPrice/p.months,
-      totalRate:totalDiscRate
+      subTotal:subTotal,
+      premAddAmt:premAddAmt,
+      finalPrice:finalPrice,mo:mo
     };
   });
-  var rec=rows[3]; // 12개월 추천
+  var rec=rows[3];
   var hasExtra=extra>0;
   
-  var extraRowsHtml=rows.map((r,i)=>{
+  // 테이블 헤더/행 조립
+  var thCols='<th>구분</th><th>정상가</th><th>프로모션 할인</th>';
+  if(hasExtra)thCols+='<th>추가 할인</th>';
+  thCols+='<th>상품1 소계</th>';
+  if(applyPrem)thCols+='<th>프리미엄 가산<br><span style="font-size:10px;font-weight:500;">('+p1District+' '+premAdd+'%)</span></th>';
+  thCols+='<th>최종 판매가</th><th>월 단가</th>';
+  
+  var trHtml=rows.map((r,i)=>{
     var cls=i===3?'recommended':'';
-    return'<tr class="'+cls+'"><td class="first">'+r.label+(i===3?' ★':'')+'</td>'+
-      '<td>'+fmt(r.nt)+'원</td>'+
-      '<td class="center" style="color:#ff8c00;font-weight:700">'+r.promoRate+'%</td>'+
-      '<td>-'+fmt(r.promoDisc)+'원</td>'+
-      '<td>'+fmt(r.subTotal)+'원</td>'+
-      (hasExtra?'<td class="center" style="color:#d9455f;font-weight:700">'+r.extraRate+'%</td><td>-'+fmt(r.extraDisc)+'원</td>':'')+
-      '<td><strong style="color:#a03848">'+fmt(r.finalPrice)+'원</strong></td>'+
-      '<td><strong>'+fmt(r.mo)+'원</strong></td></tr>';
+    var row='<tr class="'+cls+'"><td class="first">'+r.label+(i===3?' ★':'')+'</td>';
+    row+='<td>'+fmt(r.nt)+'원</td>';
+    row+='<td>-'+fmt(r.promoDisc)+'원<br><span style="font-size:10px;color:#ff8c00;font-weight:700">('+r.promoRate+'%)</span></td>';
+    if(hasExtra)row+='<td>-'+fmt(r.extraDisc)+'원<br><span style="font-size:10px;color:#d9455f;font-weight:700">('+r.extraRate+'%)</span></td>';
+    row+='<td>'+fmt(r.subTotal)+'원</td>';
+    if(applyPrem)row+='<td style="color:#0d47a1;font-weight:700">+'+fmt(r.premAddAmt)+'원</td>';
+    row+='<td><strong style="color:#a03848">'+fmt(r.finalPrice)+'원</strong></td>';
+    row+='<td><strong>'+fmt(r.mo)+'원</strong></td></tr>';
+    return row;
   }).join('');
   
-  var thHtml='<tr><th>구분</th><th>정상가</th><th>프로모션 할인율</th><th>프로모션 할인</th><th>소계</th>'+
-    (hasExtra?'<th>추가 할인율</th><th>추가 할인</th>':'')+
-    '<th>최종 결제액</th><th>월 단가</th></tr>';
+  // 헤더 문구
+  var headerSub='네모 · 무제한팩 (프리미엄 미포함) · 슬롯 2,000건';
+  if(applyPrem)headerSub+=' + '+p1District+' 프리미엄 프로모션 '+premAdd+'%';
+  var titleTxt='무제한팩 · 슬롯 2,000건 (프리미엄 미포함)';
+  if(applyPrem)titleTxt+=' + '+p1District+' 프리미엄 프로모션';
   
   document.getElementById('quotationBody').innerHTML=
-    '<div class="quotation-header"><h2>견 적 서 QUOTATION</h2><p>네모 · 무제한팩 (프리미엄 미포함) · 슬롯 2,000건</p></div>'+
+    '<div class="quotation-header"><h2>견 적 서 QUOTATION</h2><p>'+headerSub+'</p></div>'+
     '<div class="quotation-body">'+
       '<div class="quot-row" style="border:none"><div style="flex:1"><span class="lbl">발행일</span><span class="val">'+formatDate(date)+'</span></div><div style="flex:1"><span class="lbl">유효기간</span><span class="val">발행일로부터 30일</span></div></div>'+
       '<div class="quot-parties">'+
         '<div class="quot-party"><div class="tag">TO · 수신</div><div class="name">'+showOrBlank(tc,'(회사명)')+'</div><div class="info">'+showOrBlank(tp,'(담당자)')+'<br>'+showOrBlank(tph,'(연락처)')+'</div></div>'+
-        '<div class="quot-party"><div class="tag">FROM · 공급</div><div class="name">네모 · 무제한팩 (프리미엄 X)</div><div class="info">'+showOrBlank(fp,'(담당자)')+'<br>'+showOrBlank(fph,'(연락처)')+'</div></div>'+
+        '<div class="quot-party"><div class="tag">FROM · 공급</div><div class="name">네모 · 무제한팩'+(applyPrem?' + '+p1District+' 프리미엄':'')+'</div><div class="info">'+showOrBlank(fp,'(담당자)')+'<br>'+showOrBlank(fph,'(연락처)')+'</div></div>'+
       '</div>'+
-      '<div class="quot-title">무제한팩 · 슬롯 2,000건 (프리미엄 미포함)</div>'+
+      '<div class="quot-title">'+titleTxt+'</div>'+
       '<div class="quot-summary">'+
         '<div class="quot-sum-cell"><div class="lbl">정상가 합계 (12개월)</div><div class="amt">'+fmt(rec.nt)+'원</div></div>'+
-        '<div class="quot-sum-cell discount-cell"><div class="lbl">총 할인 ('+rec.totalRate.toFixed(0)+'%)</div><div class="amt">-'+fmt(rec.nt-rec.finalPrice)+'원</div></div>'+
-        '<div class="quot-sum-cell final-cell"><div class="lbl">실결제액 (12개월)</div><div class="amt">'+fmt(rec.finalPrice)+'원</div></div>'+
+        '<div class="quot-sum-cell discount-cell"><div class="lbl">할인 합계</div><div class="amt">-'+fmt(rec.promoDisc+rec.extraDisc)+'원</div></div>'+
+        '<div class="quot-sum-cell final-cell"><div class="lbl">실결제액 (12개월)'+(applyPrem?'<br><span style="font-size:10px;opacity:.8;">(프리미엄 가산 포함)</span>':'')+'</div><div class="amt">'+fmt(rec.finalPrice)+'원</div></div>'+
       '</div>'+
-      '<div class="quot-section-title">■ 견적 내역'+(hasExtra?' <span style="font-size:12px;color:#d9455f;font-weight:600">(추가 할인 '+extra+'% 적용)</span>':'')+'</div>'+
-      '<table class="quot-table"><thead>'+thHtml+'</thead><tbody>'+extraRowsHtml+'</tbody></table>'+
+      '<div class="quot-section-title">■ 견적 내역'+
+        (hasExtra?' <span style="font-size:12px;color:#d9455f;font-weight:600">(추가 할인 '+extra+'%)</span>':'')+
+        (applyPrem?' <span style="font-size:12px;color:#0d47a1;font-weight:600">('+p1District+' 프리미엄 프로모션 '+premAdd+'%)</span>':'')+
+      '</div>'+
+      '<table class="quot-table"><thead><tr>'+thCols+'</tr></thead><tbody>'+trHtml+'</tbody></table>'+
       '<div class="quot-section-title">■ 유의사항</div>'+
       '<div class="notice-list"><ol>'+
         '<li>무제한팩 (프리미엄 미포함) · 슬롯 2,000건 견적서입니다.</li>'+
-        '<li>프리미엄 우선노출권은 <strong>미제공</strong>됩니다.</li>'+
+        '<li>프리미엄 우선노출권은 <strong>미제공</strong>됩니다.'+(applyPrem?' <span style="color:#0d47a1">(단, '+p1District+' 프리미엄 프로모션 별도 적용)</span>':'')+'</li>'+
         '<li>프로모션 할인율: 1개월 30% / 3개월 45% / 6개월 50% / 12개월 55%</li>'+
         (hasExtra?'<li><strong style="color:#d9455f">영업 담당자 재량 추가 할인 '+extra+'%가 적용되었습니다.</strong></li>':'')+
+        (applyPrem?'<li><strong style="color:#0d47a1">'+p1District+' 프리미엄 프로모션: 자치구 프리미엄 정가('+fmt(distPrice)+'원/월)의 '+premAdd+'% 가산 판매</strong></li>':'')+
         '<li>12개월 기준 월 '+fmt(rec.mo)+'원</li>'+
         '<li>모든 금액은 VAT 별도입니다.</li>'+
         '<li>발행일로부터 30일간 유효합니다.</li>'+
       '</ol></div>'+
     '</div>'+
-    '<div class="quotation-footer"><div>네모 · 무제한팩 (프리미엄 X)</div><div>ad@zigbang.com</div></div>';
+    '<div class="quotation-footer"><div>네모 · 무제한팩'+(applyPrem?' + '+p1District+' 프리미엄 프로모션':' (프리미엄 X)')+'</div><div>ad@zigbang.com</div></div>';
 }
+
+
 
 function printQuot(tabId){document.querySelectorAll('.main-tab-content').forEach(c=>c.classList.remove('print-target'));document.getElementById(tabId).classList.add('print-target');setTimeout(()=>window.print(),200)}
 
