@@ -859,9 +859,11 @@ function renderSQuot(){
   if(!items.length){alert('상품을 선택하세요');return}
   var premOrig=items.filter(x=>x.type==='프리미엄').reduce((s,x)=>s+x.orig,0);
   var premFinal=items.filter(x=>x.type==='프리미엄').reduce((s,x)=>s+x.final,0);
-  var normT=items.filter(x=>x.type==='일반').reduce((s,x)=>s+x.orig,0);
-  var finalT=premFinal+normT;
-  var discAmt=premOrig-premFinal;
+  var normOrig=items.filter(x=>x.type==='일반').reduce((s,x)=>s+x.orig,0);
+  var normFinal=items.filter(x=>x.type==='일반').reduce((s,x)=>s+x.final,0);
+  var totalOrig=premOrig+normOrig;
+  var finalT=premFinal+normFinal;
+  var discAmt=(premOrig-premFinal)+(normOrig-normFinal);
   var discLabelHead=pf.disp===0?'할인 없음 (정가)':'프리미엄 할인 ('+pf.disp+'%)';
   var summaryLabel=pf.months===1?'실결제액 (월)':'실결제액 ('+pf.label+')';
   document.getElementById('sQuotBody').innerHTML='<div class="quotation-header"><h2>견 적 서 QUOTATION</h2><p>네모 ('+sido+' '+sgg+' 낱개 프리미엄 광고 · '+pf.label+')</p></div><div class="quotation-body"><div class="quot-row" style="border:none"><div style="flex:1"><span class="lbl">발행일</span><span class="val">'+formatDate(date)+'</span></div><div style="flex:1"><span class="lbl">유효기간</span><span class="val">발행일로부터 30일</span></div></div><div class="quot-parties"><div class="quot-party"><div class="tag">TO · 수신</div><div class="name">'+showOrBlank(tc,'(회사명)')+'</div><div class="info">'+showOrBlank(tp,'(담당자)')+'<br>'+showOrBlank(tph,'(연락처)')+'</div></div><div class="quot-party"><div class="tag">FROM · 공급</div><div class="name">네모 · '+sido+' '+sgg+'</div><div class="info">'+showOrBlank(fp,'(담당자)')+'<br>'+showOrBlank(fph,'(연락처)')+'</div></div></div><div class="quot-title">'+sido+' '+sgg+' 낱개 프리미엄 광고 견적 · '+pf.label+'</div><div class="quot-summary"><div class="quot-sum-cell"><div class="lbl">정가 합계 ('+pf.label+')</div><div class="amt">'+fmt(totalOrig)+'원</div></div><div class="quot-sum-cell discount-cell"><div class="lbl">'+discLabelHead+'</div><div class="amt">-'+fmt(discAmt)+'원</div></div><div class="quot-sum-cell final-cell"><div class="lbl">'+summaryLabel+'</div><div class="amt">'+fmt(finalT)+'원</div></div></div><div class="quot-section-title">■ 견적 내역</div><table class="quot-table"><thead><tr><th>상품명</th><th>구분</th><th>정가('+pf.label+')</th><th>할인율</th><th>할인가</th></tr></thead><tbody>'+items.map(it=>{
