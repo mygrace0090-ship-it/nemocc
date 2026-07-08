@@ -365,6 +365,36 @@ h1,.subtitle,.main-tabs,.quot-controls,.print-btn,.no-print,#main-price,#main-si
     <div class="field"><label>발신 담당자</label><input type="text" id="sqFromPerson" value="담당 박유진"></div>
     <div class="field"><label>발신 연락처</label><input type="text" id="sqFromPhone" value="010-3054-2974"></div>
     <div class="field" style="grid-column:1/-1;">
+  <label>서비스 상품 (영업 재량)</label>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+    <div style="padding:12px;background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:8px;">
+        <input type="checkbox" id="sqSvcOnhouse" onchange="renderSQuot()" style="width:16px;height:16px;">
+        <span style="font-weight:600;">🎁 온하우스 이용권</span>
+      </label>
+      <select id="sqSvcOnhouseMonths" onchange="renderSQuot()" style="width:100%;padding:6px 8px;">
+        <option value="1">1개월 (계정 1개)</option>
+        <option value="3">3개월 (계정 2개)</option>
+        <option value="6">6개월 (계정 3개)</option>
+        <option value="12" selected>12개월 (계정 4개)</option>
+      </select>
+    </div>
+    <div style="padding:12px;background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:8px;">
+        <input type="checkbox" id="sqSvcCp" onchange="renderSQuot()" style="width:16px;height:16px;">
+        <span style="font-weight:600;">🎫 CP쿠폰</span>
+      </label>
+      <select id="sqSvcCpQty" onchange="renderSQuot()" style="width:100%;padding:6px 8px;">
+        <option value="50">50개</option>
+        <option value="100">100개</option>
+        <option value="200">200개</option>
+        <option value="300" selected>300개</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+    <div class="field" style="grid-column:1/-1;">
       <label>계약 기간 선택</label>
       <div id="sq-period-tabs"></div>
     </div>
