@@ -810,12 +810,11 @@ function switchSeg(btn,i){
 }
 function filterPickItems(){var q=document.getElementById('pick-search').value.toLowerCase();document.querySelectorAll('.pick-item').forEach(el=>{el.style.display=el.dataset.name.toLowerCase().includes(q)?'':'none'})}
 
-function updatePickerSummary(){
-  if(!_sqRd)return;
+function updatePickerSummary(){if(!_sqRd)return;
   var pf=SINGLE_PERIODS[_sqPeriodIdx];
-  var cnt=0,origT=0,premOrig=0;
+  var cnt=0,origT=0,premOrig=0,normOrig=0;
   var normOn=document.getElementById('pick-normal')&&document.getElementById('pick-normal').classList.contains('on');
-  if(normOn){cnt++;origT+=_sqRd.n*pf.months}
+  if(normOn){cnt++;normOrig=_sqRd.n*pf.months;origT+=normOrig}
   document.querySelectorAll('.pick-item.on').forEach(el=>{
     var i=parseInt(el.dataset.i),it=_sqRd.d[i];
     var seg=el.querySelector('.pi-seg button.on'),v=seg?seg.dataset.v:'s';
@@ -824,9 +823,9 @@ function updatePickerSummary(){
     cnt++;origT+=totalOrig;premOrig+=totalOrig;
   });
   var premFinal=Math.round(premOrig*pf.real);
-  var disc=premOrig-premFinal;
-  var normT=normOn?_sqRd.n*pf.months:0;
-  var total=premFinal+normT;
+  var normFinal=Math.round(normOrig*pf.real);
+  var disc=(premOrig-premFinal)+(normOrig-normFinal);
+  var total=premFinal+normFinal;
   document.getElementById('pick-count-txt').textContent=cnt+'개 선택';
   document.getElementById('pf-cnt').textContent=cnt+'개';
   document.getElementById('pf-orig').textContent=fmt(origT)+'원';
@@ -845,7 +844,8 @@ function renderSQuot(){
   if(normOn){
     var ncnt=document.getElementById('sq-ncnt').value;
     var normPrice=rd.n*pf.months;
-    items.push({name:'일반매물 ('+ncnt+'건)',orig:normPrice,final:normPrice,type:'일반'});
+     items.push({name:'일반매물 ('+ncnt+'건)',orig:normPrice,final:Math.round(normPrice*pf.real),type:'일반'});
+
     totalOrig+=normPrice;
   }
   document.querySelectorAll('.pick-item.on').forEach(el=>{
