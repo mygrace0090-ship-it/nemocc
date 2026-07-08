@@ -580,7 +580,7 @@ function loadSingle(){
   var h='<div class="section"><h2>'+sido+' '+sgg+' — 낱개 프리미엄 가격표</h2>';
   // ★ 기간 선택 탭
   h+=buildPeriodTabsHtml(_sPeriodIdx,'sChangePeriod');
-  h+='<div class="normal-price-card"><div class="price-label">일반매물 정가 (VAT포함)</div><div class="price-value">'+fmt(rd.n*pf.months)+'원</div><div class="price-sub">매물 10건 기준 · '+pf.label+' 합계 (일반매물은 할인 없음)</div></div>';
+    h+='<div class="normal-price-card"><div class="price-label">일반매물 '+(pf.disp===0?'정가':'할인가')+' (VAT포함)</div><div class="price-value">'+fmt(Math.round(rd.n*pf.months*pf.real))+'원</div><div class="price-sub">매물 10건 기준 · '+pf.label+' 합계'+(pf.disp===0?'':' · '+pf.disp+'% 할인 적용')+'</div></div>';
   var discLabel=pf.disp===0?'정가 (할인 없음)':'기본 '+pf.disp+'% 할인';
   h+='<h3>프리미엄 (우선노출) <span style="font-size:13px;color:#888">(VAT포함 / '+pf.label+' / '+discLabel+')</span></h3>';
   h+='<div class="type-toggle"><button class="type-btn '+(_curType==='상가'?'active':'')+'" onclick="_curType=\'상가\';loadSingle()">상가</button><button class="type-btn '+(_curType==='사무실'?'active':'')+'" onclick="_curType=\'사무실\';loadSingle()">사무실</button><button class="type-btn '+(_curType==='패키지'?'active':'')+'" onclick="_curType=\'패키지\';loadSingle()">패키지</button></div>';
@@ -622,8 +622,9 @@ function refreshAllSqPrices(){
   if(!_sqRd)return;
   var pf=SINGLE_PERIODS[_sqPeriodIdx];
   // 일반매물 가격 갱신
-  var pnEl=document.querySelector('#pick-normal .pn-price');
-  if(pnEl)pnEl.textContent=fmt(_sqRd.n*pf.months)+'원';
+    var pnEl=document.querySelector('#pick-normal .pn-price');
+    if(pnEl)pnEl.textContent=fmt(Math.round(_sqRd.n*pf.months*pf.real))+'원';
+
   // 프리미엄 아이템 가격 갱신
   _sqRd.d.forEach((it,i)=>{
     var el=document.querySelector('.pick-item[data-i="'+i+'"]');
